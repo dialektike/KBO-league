@@ -127,3 +127,14 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# for vscode
+.vscode/
+
+# for mac 
+*.DS_Store
+.DS_Store
+test.ipynb
+
+# for R
+.Rapp.history
