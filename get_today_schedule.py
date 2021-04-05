@@ -20,8 +20,6 @@ import json
 import requests
 from bs4 import BeautifulSoup
 
-import pasing_page
-
 
 def chang_name_into_id_2021(team_name):
     """2021년용 팀 이름을 팀 ID로 바꾸는 함수
