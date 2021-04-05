@@ -55,13 +55,14 @@ if __name__ == "__main__":
     soup = BeautifulSoup(html, "lxml")
 
     exporting_dict = {}
+    
+    # 현재년도를 가져온다.
+    today = date.today()
+    exporting_dict["year"] = str(today.year)
 
     # 우선 현재 가져온 자료를 날짜를 찾는다.
     temp_date = soup.find("li", role="presentation", class_="on").find("em").text
     exporting_dict["date"] = temp_date
-    
-    # 현재년도를 가져온다.
-    today = date.today()
     
     # 다음으로 게임 상대를 찾는다.
     todaySchedule = soup.find_all("ul", id="todaySchedule")
@@ -86,7 +87,7 @@ if __name__ == "__main__":
     
     print(exporting_dict)
     
-    file_name = str(today.year) + temp_date.replace(".", "_") + "_Schedule.json"
+    file_name = str(today.year) + "_" + temp_date.replace(".", "_") + "_Schedule.json"
     
     with open(file_name, "w") as outfile:
         json.dump(exporting_dict, outfile)
