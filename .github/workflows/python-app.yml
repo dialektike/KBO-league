@@ -30,3 +30,7 @@ jobs:
       run: |
         ls
         python get_today_schedule.py
+        mkdir schedule
+        cp *.json /schedule/
+        cd schedule
+        ls
