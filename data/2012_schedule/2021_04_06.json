@@ -1,1 +1,8 @@
-{"year": "2021", "date": "04.06", "1": {"away": "SS", "home": "OB", "state": "종료", "suspended": "0"}, "2": {"away": "LT", "home": "NC", "state": "종료", "suspended": "0"}, "3": {"away": "LG", "home": "KT", "state": "종료", "suspended": "0"}, "4": {"away": "HT", "home": "WO", "state": "종료", "suspended": "0"}, "5": {"away": "HH", "home": "SK", "state": "종료", "suspended": "0"}}
+{"year": "2021", 
+ "date": "04.06", 
+ "1": {"away": "SS", "home": "OB", "state": "종료", "suspended": "0"}, 
+ "2": {"away": "LT", "home": "NC", "state": "종료", "suspended": "0"}, 
+ "3": {"away": "LG", "home": "KT", "state": "종료", "suspended": "0"}, 
+ "4": {"away": "HT", "home": "WO", "state": "종료", "suspended": "0"}, 
+ "5": {"away": "HH", "home": "SK", "state": "종료", "suspended": "0"}
+}
