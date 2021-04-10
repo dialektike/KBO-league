@@ -26,23 +26,8 @@ jobs:
         pip install requests
         pip install bs4
         pip install lxml
+        pit install pandas
     - name: Run
       run: |
         ls
-        python get_today_schedule.py
-        mkdir schedule
-        cp *.json schedule/
-        cd schedule
-        ls
-  
-    # AWS S3에 압축파일을 전달하는 설정 및 명령어
-    - name: deploy to s3
-      uses: jakejarvis/s3-sync-action@master
-      with:
-        args: --acl public-read --follow-symlinks --delete
-      env:
-        AWS_S3_BUCKET: ${{secrets.AWS_PRODUCTION_BUCKET_NAME}}
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_IAM_MANAGER_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_IAM_MANAGER_SECRET_ACCESS_KEY }}
-        AWS_REGION: ap-northeast-2
-        SOURCE_DIR: 'schedule'
+        python for_github_actions.py
