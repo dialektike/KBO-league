@@ -30,4 +30,4 @@ jobs:
     - name: Run
       run: |
         ls
-        python for_github_actions.py
+        python for_github_actions.py ${{secrets.API_URL}}
