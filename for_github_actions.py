@@ -6,15 +6,11 @@ Example:
 """
 
 import sys
-from datetime import date
 import json
 
-import pandas as pd
 import requests
 
-import get_data
 import get_game_schedule
-import parsing_game_schedule
 
 if __name__ == "__main__":
     
