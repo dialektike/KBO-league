@@ -13,6 +13,7 @@ Example:
 
 """
 
+import configparser
 import json
 from datetime import date
 
@@ -24,7 +25,9 @@ import parsing_game_schedule
 
 def today():
 
-    temp_url = "https://sports.news.naver.com/kbaseball/schedule/index.nhn"
+    config = configparser.ConfigParser()
+    config.read("config.ini")
+    temp_url = config["DEFAULT"]["naver_KBO_URL"]
     req = requests.get(temp_url)
     print(req.status_code)
     html = req.text
@@ -55,7 +58,8 @@ def today():
         if item.find("div", class_="vs_cnt").find("p", class_="suspended") == None :
             suspended = "0"
         else:
-            suspended = item.find("div", class_="vs_cnt").find("p", class_="suspended")
+            temp_suspended = item.find("div", class_="vs_cnt").find("p", class_="suspended")
+            suspended = temp_suspended.text.strip()
 
         temp_list = {
             "away": parsing_game_schedule.chang_name_into_id(
