@@ -25,9 +25,7 @@ import parsing_game_schedule
 
 def today():
 
-    config = configparser.ConfigParser()
-    config.read("config.ini")
-    temp_url = config["DEFAULT"]["naver_KBO_URL"]
+    temp_url = "https://sports.news.naver.com/kbaseball/schedule/index.nhn"
     req = requests.get(temp_url)
     print(req.status_code)
     html = req.text
