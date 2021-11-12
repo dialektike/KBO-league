@@ -1,18 +1,26 @@
-# KBO
-KBO 데이터를 수집하고 저장하는 곳
+# KBO-league
 
-## 모든 자료 합치는 방법
+KBO league 데이터를 수집하고 정리하는 프로젝트
 
-### 라이브러리 세팅
+## 경기 자료를 json 형식으로
+
+아래 코드를 실행하시면 `game_data.json`이라는 파일에 자료가 저장됩니다.
 
 ```python
 import json
-import pandas as pd
+
+import get
+game_date = get.game_data()
+
+file_name = "game_data.json"
+
+with open(file_name, "w") as outfile:
+    json.dump(game_date, outfile, ensure_ascii=False)
 ```
 
 ### 경기 일정 자료
 
-아래 2019년 자료 합치는 방법입니다. 이를 참고하여 정리하시면 됩니다. 
+아래 2019년 자료 합치는 방법입니다. 이를 참고하여 정리하시면 됩니다.
 
 ```python
 kbo_id_temp_3=pd.read_csv("./data/temp_schedule_2019_3.csv")
