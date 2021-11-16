@@ -4,12 +4,13 @@ KBO league 데이터를 수집하고 정리하는 프로젝트
 
 ## 경기 자료를 json 형식으로
 
-아래 코드를 실행하시면 `game_data.json`이라는 파일에 자료가 저장됩니다.
+아래 코드를 실행하시면 지금까지 수집한 모든 자료를 `game_data.json`이라는 파일로 저장합니다. 만약 저장하지 않고 사용하시려면 아래 코드에서 `json`형식으로 저장하지 않고 변수 `game_date`을 사용하시면 됩니다.
 
 ```python
 import json
 
 import get
+
 game_date = get.game_data()
 
 file_name = "game_data.json"
