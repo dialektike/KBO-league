@@ -12,5 +12,5 @@ game_data = get.game_data()
 file_name = "game_data.json"
 
 with open(file_name, "w") as outfile:
-    json.dump(game_date, outfile, ensure_ascii=False)
+    json.dump(game_data, outfile, ensure_ascii=False)
 ```
