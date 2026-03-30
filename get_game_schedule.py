@@ -1,77 +1,129 @@
-""" KBO 경기 일정을 가져오는 모듈
+"""KBO 경기 일정을 가져오는 모듈
 
-KBO 경기 일정을 수집합니다. 오늘 경기 일정은 네이버에서 가져오고 있습니다.
+KBO 공식 JSON API를 사용하여 경기 일정과 결과를 수집합니다.
+Selenium 불필요, HTML 파싱 불필요 — 순수 JSON API 호출만 사용합니다.
 
 Example:
-    오늘 경기 일정은 `today()`가 담당합니다.
-
+    오늘 경기 일정:
         >>> import get_game_schedule
-        >>> temp = get_game_schedule.today()
-        200
-        >>> temp
-        {'year': '2021', 'date': '04.07', 1: {'away': 'SS', 'home': 'OB', 'state': '18:30'}, 2: {'away': 'LT', 'home': 'NC', 'state': '18:30'}, 3: {'away': 'LG', 'home': 'KT', 'state': '18:30'}, 4: {'away': 'HT', 'home': 'WO', 'state': '18:30'}, 5: {'away': 'HH', 'home': 'SK', 'state': '18:30'}}
+        >>> games = get_game_schedule.today()
+        >>> games[0]["G_ID"]
+        '20260328KTLG0'
 
+    특정 날짜:
+        >>> games = get_game_schedule.by_date("20260328")
+
+    기존 포맷 호환:
+        >>> schedule = get_game_schedule.today_legacy()
+        >>> schedule[0]
+        {'gameDate': '20260328', 'gameId': 'KTLG0', 'away': 'KT', 'home': 'LG', ...}
 """
 
-import configparser
-import json
 from datetime import date
 
 import requests
-from bs4 import BeautifulSoup
 
-import parsing_game_schedule
+API_URL = "https://www.koreabaseball.com/ws/Main.asmx/GetKboGameList"
+
+HEADERS = {
+    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    "X-Requested-With": "XMLHttpRequest",
+    "Referer": "https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx",
+}
+
+# 정규시즌(0) + 시범(1) + 포스트시즌(3~9)
+DEFAULT_SR_ID = "0,1,3,4,5,6,7,8,9"
 
 
-def today():
+def by_date(game_date, sr_id=DEFAULT_SR_ID, include_score=False):
+    """특정 날짜의 경기 목록을 KBO API에서 가져옵니다.
 
-    temp_url = "https://sports.news.naver.com/kbaseball/schedule/index.nhn"
-    req = requests.get(temp_url)
-    print(req.status_code)
-    html = req.text
+    Args:
+        game_date (str): "20260328" 형식의 날짜
+        sr_id (str): 시리즈 ID (기본값: 정규+시범+포스트)
+        include_score (bool): True이면 각 경기에 scoreboard 요약 추가
 
-    exporting_dict = {}
+    Returns:
+        list: 경기 정보 딕셔너리 목록 (KBO API 원본 포맷)
+    """
+    data = {
+        "leId": 1,
+        "srId": sr_id,
+        "date": game_date,
+    }
+    resp = requests.post(API_URL, data=data, headers=HEADERS, timeout=30)
+    resp.raise_for_status()
+    result = resp.json()
+    games = result.get("game", [])
 
-    soup = BeautifulSoup(html, "lxml")
+    if include_score:
+        for g in games:
+            g["scoreboard"] = _extract_scoreboard(g)
 
-    exporting_dict = {}
+    return games
 
-    # 현재 연도를 가져온다.
-    today = date.today()
-    exporting_dict["year"] = str(today.year)
 
-    # 우선 현재 가져온 자료를 날짜를 찾는다.
-    temp_date = soup.find("li", role="presentation", class_="on").find("em").text
-    exporting_dict["date"] = temp_date
+def _extract_scoreboard(game):
+    """경기 API 응답에서 스코어보드 요약을 추출합니다."""
+    return {
+        "away_score": game.get("T_SCORE_CN", ""),
+        "home_score": game.get("B_SCORE_CN", ""),
+    }
 
-    # 다음으로 게임 상대를 찾는다.
-    todaySchedule = soup.find_all("ul", id="todaySchedule")
-    temp_todaySchedule = todaySchedule[0]
 
-    i = 0
+def today(sr_id=DEFAULT_SR_ID, include_score=False):
+    """오늘 경기 목록을 가져옵니다."""
+    today_str = date.today().strftime("%Y%m%d")
+    return by_date(today_str, sr_id=sr_id, include_score=include_score)
 
-    for item in temp_todaySchedule.find_all("li"):
-        i = i + 1
 
-        if item.find("div", class_="vs_cnt").find("p", class_="suspended") == None :
-            suspended = "0"
-        else:
-            temp_suspended = item.find("div", class_="vs_cnt").find("p", class_="suspended")
-            suspended = temp_suspended.text.strip()
+def today_legacy():
+    """오늘 경기를 기존 KBO-league 포맷으로 변환하여 반환합니다.
 
-        temp_list = {
-            "away": parsing_game_schedule.chang_name_into_id(
-                item.find("div", class_="vs_lft").find_all("strong")[0].text,
-                exporting_dict["year"],
-            ),
-            "home": parsing_game_schedule.chang_name_into_id(
-                item.find("div", class_="vs_rgt").find_all("strong")[0].text,
-                exporting_dict["year"],
-            ),
-            "state": item.find("div", class_="vs_cnt")
-            .find_all("em", class_="state")[0].text.strip(),
-            "suspended": suspended
-        }
-        exporting_dict[i] = temp_list
+    Returns:
+        list: [{"gameDate": "20260328", "gameId": "KTLG0", "away": "KT", "home": "LG", ...}, ...]
+    """
+    games = today()
+    return [_to_legacy(g) for g in games]
 
-    return exporting_dict
+
+def by_date_legacy(game_date):
+    """특정 날짜 경기를 기존 포맷으로 반환합니다."""
+    games = by_date(game_date)
+    return [_to_legacy(g) for g in games]
+
+
+def _to_legacy(g):
+    """KBO API 응답을 기존 KBO-league 포맷으로 변환합니다."""
+    g_id = g.get("G_ID", "")
+    game_date = g_id[:8] if len(g_id) >= 8 else g.get("G_DT", "")
+    game_id = g_id[8:] if len(g_id) > 8 else ""
+
+    return {
+        "gameDate": game_date,
+        "gameId": game_id,
+        "away": g.get("AWAY_ID", ""),
+        "home": g.get("HOME_ID", ""),
+        "away_name": g.get("AWAY_NM", ""),
+        "home_name": g.get("HOME_NM", ""),
+        "venue": g.get("S_NM", ""),
+        "time": g.get("G_TM", ""),
+        "away_score": g.get("T_SCORE_CN", ""),
+        "home_score": g.get("B_SCORE_CN", ""),
+        "state": g.get("CANCEL_SC_NM", ""),
+        "finished": g.get("GAME_RESULT_CK", 0) == 1,
+        "away_starter": g.get("T_PIT_P_NM", "").strip(),
+        "home_starter": g.get("B_PIT_P_NM", "").strip(),
+        "win_pitcher": g.get("W_PIT_P_NM", "").strip(),
+        "save_pitcher": g.get("SV_PIT_P_NM", "").strip(),
+        "lose_pitcher": g.get("L_PIT_P_NM", "").strip(),
+    }
+
+
+if __name__ == "__main__":
+    import json
+
+    print("=== 오늘 KBO 경기 (API 원본) ===")
+    games = today()
+    print(f"경기 수: {len(games)}")
+    print(json.dumps(games, ensure_ascii=False, indent=2))
