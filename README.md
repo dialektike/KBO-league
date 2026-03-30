@@ -35,6 +35,21 @@ print(games[0]["scoreboard"])
 games = get_game_schedule.by_date("20260328")
 ```
 
+### 1주일 경기 일정
+
+```python
+week = get_game_schedule.by_week("20260328")
+for date, games in week.items():
+    print(f"{date}: {len(games)}경기")
+```
+
+### 스케줄 저장
+
+```python
+# 한 달치 스케줄을 CSV로 저장 → data/schedule/2026/2026_03.csv
+get_game_schedule.save_month_csv(2026, 3)
+```
+
 ### 상세 경기 데이터 수집
 
 ```python
@@ -77,8 +92,11 @@ data/
 │   ├── 2001/
 │   │   └── 2001_04.json
 │   ├── ...
-│   └── 2021/
-└── temp/          # 임시 데이터
+│   └── 2026/
+├── schedule/      # 경기 일정 (월별 CSV)
+│   └── 2026/
+│       └── 2026_03.csv
+└── temp/          # 과거 수집 임시 데이터
 ```
 
 ### 경기 데이터 포맷
