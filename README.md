@@ -2,8 +2,9 @@
 
 KBO 리그 경기 일정과 경기 자료를 모으고 정리하는 프로젝트입니다.
 
-**Selenium/ChromeDriver 없이** `requests` + `BeautifulSoup`만 사용하여
-KBO 공식 홈페이지에서 데이터를 수집합니다.
+**Selenium/ChromeDriver 없이** `requests`만 사용하여
+KBO 공식 JSON API에서 데이터를 수집합니다.
+
 ## 설치
 
 ```bash
@@ -87,12 +88,18 @@ data/
 {
   "id": "20260328_KTLG0",
   "contents": {
-    "scoreboard": [...],
+    "scoreboard": {
+      "innings": ["1", "2", "3", ...],
+      "away": ["6", "0", "0", ...],
+      "home": ["0", "0", "2", ...],
+      "away_RHEB": ["11", "18", "0", "6"],
+      "home_RHEB": ["7", "12", "0", "8"]
+    },
     "ETC_info": {},
-    "away_batter": [...],
-    "home_batter": [...],
-    "away_pitcher": [...],
-    "home_pitcher": [...]
+    "away_batter": {},
+    "home_batter": {},
+    "away_pitcher": [],
+    "home_pitcher": []
   }
 }
 ```
