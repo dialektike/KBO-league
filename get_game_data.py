@@ -296,6 +296,8 @@ def fetch_date(game_date, delay=1.0):
 def fetch_month(year, month, delay=1.0, save=False):
     """한 달치 모든 경기 데이터를 수집합니다.
 
+    이미 수집된 경기는 건너뛰고 새 경기만 수집합니다.
+
     Args:
         year (int): 연도 (예: 2026)
         month (int): 월 (1~12)
@@ -303,31 +305,69 @@ def fetch_month(year, month, delay=1.0, save=False):
         save (bool): True이면 data/game/{year}/{year}_{month}.json에 저장
 
     Returns:
-        list: 경기 데이터 목록
+        list: 전체 경기 데이터 목록 (기존 + 신규)
     """
     import calendar
     import os
 
-    results = []
+    # 기존 데이터 로드
+    dir_path = f"data/game/{year}"
+    file_path = f"{dir_path}/{year}_{month:02d}.json"
+    existing = []
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            existing = json.load(f)
+    existing_ids = {g["id"] for g in existing}
+
+    new_count = 0
     _, last_day = calendar.monthrange(year, month)
 
     for day in range(1, last_day + 1):
         game_date = f"{year}{month:02d}{day:02d}"
-        print(f"[{game_date}]")
-        day_results = fetch_date(game_date, delay=delay)
-        results.extend(day_results)
+        games = get_game_schedule.by_date(game_date)
 
-    print(f"총 {len(results)}경기 수집 완료 ({year}년 {month}월)")
+        has_new = False
+        for g in games:
+            g_id = g.get("G_ID", "")
+            if len(g_id) < 9:
+                continue
+            game_id = g_id[8:]
+            full_id = f"{game_date}_{game_id}"
 
-    if save and results:
-        dir_path = f"data/game/{year}"
+            if full_id in existing_ids:
+                continue
+
+            if g.get("CANCEL_SC_ID", "0") != "0":
+                continue
+
+            if not has_new:
+                print(f"[{game_date}]")
+                has_new = True
+
+            sr_id = g.get("SR_ID", 0)
+            season_id = g.get("SEASON_ID", int(game_date[:4]))
+
+            print(f"  수집 중: {game_date} {game_id}")
+            try:
+                data = fetch_game(game_date, game_id, sr_id=sr_id, season_id=season_id)
+                existing.append(data)
+                existing_ids.add(full_id)
+                new_count += 1
+            except Exception as e:
+                print(f"  오류: {e}")
+
+            if delay > 0:
+                time.sleep(delay)
+
+    print(f"신규 {new_count}경기 수집 (총 {len(existing)}경기, {year}년 {month}월)")
+
+    if save:
         os.makedirs(dir_path, exist_ok=True)
-        file_path = f"{dir_path}/{year}_{month:02d}.json"
         with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(results, f, ensure_ascii=False, indent=2)
+            json.dump(existing, f, ensure_ascii=False, indent=2)
         print(f"저장 완료: {file_path}")
 
-    return results
+    return existing
 
 
 if __name__ == "__main__":
