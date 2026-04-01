@@ -82,11 +82,14 @@ convert_game_data.convert_dir("data/game/2026/")
 ### 수집 + 변환 한번에
 
 ```bash
-# 1) 수집
-python -c "import get_game_data; get_game_data.fetch_month(2026, 4, save=True)"
+# 특정 월
+python get_kbo.py 2026 4
 
-# 2) 기존 포맷으로 변환
-python convert_game_data.py data/game/2026/2026_04.json
+# 여러 달 (4~10월)
+python get_kbo.py 2026 4 10
+
+# 연도 전체 (3~10월)
+python get_kbo.py 2026
 ```
 
 ### 기존 수집 데이터 읽기
