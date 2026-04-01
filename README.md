@@ -57,22 +57,41 @@ import get_game_data
 
 # 단일 경기
 data = get_game_data.fetch_game("20260328", "KTLG0")
-print(data["contents"].keys())
-# dict_keys(['scoreboard', 'ETC_info', 'away_batter', 'home_batter', 'away_pitcher', 'home_pitcher'])
 
 # 날짜 전체
 day_data = get_game_data.fetch_date("20260328")
 
-# 한 달치
-month_data = get_game_data.fetch_month(2026, 4)
+# 한 달치 수집 + 저장
+get_game_data.fetch_month(2026, 4, save=True)
+```
 
-# 한 달치 수집 + data/game/2026/2026_04.json 저장
-month_data = get_game_data.fetch_month(2026, 4, save=True)
+### 데이터 포맷 변환
+
+수집한 데이터를 기존(2001~2021) 포맷으로 변환합니다.
+
+```python
+import convert_game_data
+
+# 단일 파일 변환 (덮어쓰기)
+convert_game_data.convert_file("data/game/2026/2026_04.json")
+
+# 연도 전체 변환
+convert_game_data.convert_dir("data/game/2026/")
+```
+
+### 수집 + 변환 한번에
+
+```bash
+# 1) 수집
+python -c "import get_game_data; get_game_data.fetch_month(2026, 4, save=True)"
+
+# 2) 기존 포맷으로 변환
+python convert_game_data.py data/game/2026/2026_04.json
 ```
 
 ### 기존 수집 데이터 읽기
 
-2001~2021년 수집된 데이터를 JSON으로 읽을 수 있습니다.
+2001~2026년 수집된 데이터를 JSON으로 읽을 수 있습니다.
 
 ```python
 import json
@@ -94,8 +113,8 @@ data/
 │   ├── ...
 │   └── 2026/
 ├── schedule/      # 경기 일정 (월별 CSV)
+│   ├── 2025/
 │   └── 2026/
-│       └── 2026_03.csv
 └── temp/          # 과거 수집 임시 데이터
 ```
 
@@ -105,18 +124,19 @@ data/
 {
   "id": "20260328_KTLG0",
   "contents": {
-    "scoreboard": {
-      "innings": ["1", "2", "3", ...],
-      "away": ["6", "0", "0", ...],
-      "home": ["0", "0", "2", ...],
-      "away_RHEB": ["11", "18", "0", "6"],
-      "home_RHEB": ["7", "12", "0", "8"]
-    },
-    "ETC_info": {},
-    "away_batter": {},
-    "home_batter": {},
-    "away_pitcher": [],
-    "home_pitcher": []
+    "scoreboard": [
+      {"팀": "KT", "승패": "승", "1": 6, "2": 0, ..., "R": 11, "H": 18, "E": 0, "B": 6},
+      {"팀": "LG", "승패": "패", "1": 0, "2": 0, ..., "R": 7, "H": 12, "E": 0, "B": 8}
+    ],
+    "ETC_info": {"결승타": "...", "홈런": "...", "심판": ["...", "..."], ...},
+    "away_batter": [
+      {"포지션": "중", "선수명": "...", "1": "안타", ..., "타수": 4, "안타": 2, "타점": 1, "득점": 1, "타율": 0.3, "팀": "KT"}
+    ],
+    "home_batter": [...],
+    "away_pitcher": [
+      {"선수명": "...", "등판": "선발", "결과": "승", ..., "이닝": 7, "삼진": 5, "평균자책점": 3.0, "팀": "KT"}
+    ],
+    "home_pitcher": [...]
   }
 }
 ```
