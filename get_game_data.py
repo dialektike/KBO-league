@@ -293,10 +293,17 @@ def fetch_date(game_date, delay=1.0):
     return results
 
 
+def _is_empty_game(game):
+    """경기 데이터가 비어있는지 (미경기/수집 전) 확인합니다."""
+    contents = game.get("contents", {})
+    return not contents.get("away_batter") and not contents.get("home_batter")
+
+
 def fetch_month(year, month, delay=1.0, save=False):
     """한 달치 모든 경기 데이터를 수집합니다.
 
     이미 수집된 경기는 건너뛰고 새 경기만 수집합니다.
+    단, 빈 데이터(경기 전 수집된 플레이스홀더)는 재수집합니다.
 
     Args:
         year (int): 연도 (예: 2026)
@@ -317,13 +324,22 @@ def fetch_month(year, month, delay=1.0, save=False):
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             existing = json.load(f)
+
+    # 빈 데이터(미경기 플레이스홀더)는 제거하여 재수집 대상에 포함
+    empty_ids = {g["id"] for g in existing if _is_empty_game(g)}
+    if empty_ids:
+        existing = [g for g in existing if g["id"] not in empty_ids]
     existing_ids = {g["id"] for g in existing}
 
     new_count = 0
     _, last_day = calendar.monthrange(year, month)
+    from datetime import date
+    today = date.today().strftime("%Y%m%d")
 
     for day in range(1, last_day + 1):
         game_date = f"{year}{month:02d}{day:02d}"
+        if game_date > today:
+            break
         games = get_game_schedule.by_date(game_date)
 
         has_new = False
