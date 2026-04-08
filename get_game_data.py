@@ -302,7 +302,7 @@ def fetch_date(game_date, delay=1.0):
     return results
 
 
-def fetch_month(year, month, delay=1.0, save=False):
+def fetch_month(year, month, delay=0.5, save=False):
     """한 달치 모든 경기 데이터를 수집합니다.
 
     이미 수집된 경기는 건너뛰고 새 경기만 수집합니다.
