@@ -208,12 +208,14 @@ def convert_file(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         games = json.load(f)
 
-    # 이미 기존 포맷인지 확인
-    if games and "meta" not in games[0] and isinstance(
-        games[0].get("contents", {}).get("scoreboard"), list
-    ):
-        print(f"  건너뜀 (이미 기존 포맷): {file_path}")
-        return 0
+    # 이미 기존 포맷인지 확인 (기존 포맷: scoreboard가 list, 신규 포맷: meta 키 존재)
+    if games:
+        first = games[0]
+        scoreboard = first.get("contents", {}).get("scoreboard")
+        has_meta = "meta" in first
+        if isinstance(scoreboard, list) and not has_meta:
+            print(f"  건너뜀 (이미 기존 포맷): {file_path}")
+            return 0
 
     converted = [convert_game(g) for g in games]
 

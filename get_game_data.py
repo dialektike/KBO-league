@@ -16,8 +16,11 @@ Example:
         >>> games = get_game_data.fetch_date("20260328")
 """
 
+import calendar
 import json
+import os
 import time
+from datetime import date
 
 import requests
 
@@ -31,6 +34,12 @@ HEADERS = {
     "X-Requested-With": "XMLHttpRequest",
     "Referer": "https://www.koreabaseball.com/Schedule/GameCenter/Main.aspx",
 }
+
+
+def _is_empty_game(game):
+    """경기 데이터가 비어있는지 (미경기/수집 전) 확인합니다."""
+    contents = game.get("contents", {})
+    return not contents.get("away_batter") and not contents.get("home_batter")
 
 
 def _extract_text(rows):
@@ -285,18 +294,12 @@ def fetch_date(game_date, delay=1.0):
             data = fetch_game(game_date, game_id, sr_id=sr_id, season_id=season_id)
             results.append(data)
         except Exception as e:
-            print(f"  오류: {e}")
+            print(f"  오류: {game_date} {game_id} - {e}")
 
         if delay > 0:
             time.sleep(delay)
 
     return results
-
-
-def _is_empty_game(game):
-    """경기 데이터가 비어있는지 (미경기/수집 전) 확인합니다."""
-    contents = game.get("contents", {})
-    return not contents.get("away_batter") and not contents.get("home_batter")
 
 
 def fetch_month(year, month, delay=1.0, save=False):
@@ -314,9 +317,6 @@ def fetch_month(year, month, delay=1.0, save=False):
     Returns:
         list: 전체 경기 데이터 목록 (기존 + 신규)
     """
-    import calendar
-    import os
-
     # 기존 데이터 로드
     dir_path = f"data/game/{year}"
     file_path = f"{dir_path}/{year}_{month:02d}.json"
@@ -332,8 +332,8 @@ def fetch_month(year, month, delay=1.0, save=False):
     existing_ids = {g["id"] for g in existing}
 
     new_count = 0
+    failed = []
     _, last_day = calendar.monthrange(year, month)
-    from datetime import date
     today = date.today().strftime("%Y%m%d")
 
     for day in range(1, last_day + 1):
@@ -370,12 +370,15 @@ def fetch_month(year, month, delay=1.0, save=False):
                 existing_ids.add(full_id)
                 new_count += 1
             except Exception as e:
-                print(f"  오류: {e}")
+                print(f"  오류: {game_date} {game_id} - {e}")
+                failed.append(full_id)
 
             if delay > 0:
                 time.sleep(delay)
 
     print(f"신규 {new_count}경기 수집 (총 {len(existing)}경기, {year}년 {month}월)")
+    if failed:
+        print(f"실패 {len(failed)}경기: {', '.join(failed)}")
 
     if save:
         os.makedirs(dir_path, exist_ok=True)
