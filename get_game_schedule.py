@@ -46,6 +46,8 @@ from datetime import date, timedelta
 
 import requests
 
+import settings
+
 API_URL = "https://www.koreabaseball.com/ws/Main.asmx/GetKboGameList"
 
 HEADERS = {
@@ -60,8 +62,10 @@ DEFAULT_SR_ID = "0,1,3,4,5,6,7,8,9"
 SCHEDULE_DIR = "data/schedule"  # base_dir 기준 상대 경로
 
 
-def _schedule_dir(base_dir="."):
+def _schedule_dir(base_dir=None):
     """스케줄 저장 디렉토리 경로를 반환합니다."""
+    if base_dir is None:
+        base_dir = settings.BASE_DIR
     return os.path.join(base_dir, SCHEDULE_DIR)
 
 SCHEDULE_FIELDS = [
@@ -81,7 +85,7 @@ SR_ID_NAMES = {
 }
 
 
-def _schedule_path(game_date, base_dir="."):
+def _schedule_path(game_date, base_dir=None):
     """스케줄 저장 경로를 반환합니다."""
     year = game_date[:4]
     return os.path.join(_schedule_dir(base_dir), year, f"{game_date}.json")
@@ -110,7 +114,7 @@ def _fetch_from_api(game_date, sr_id=DEFAULT_SR_ID):
     return result.get("game", [])
 
 
-def by_date(game_date, sr_id=DEFAULT_SR_ID, include_score=False, force_fetch=False, base_dir="."):
+def by_date(game_date, sr_id=DEFAULT_SR_ID, include_score=False, force_fetch=False, base_dir=None):
     """특정 날짜의 경기 목록을 가져옵니다.
 
     저장된 스케줄 파일이 있으면 파일에서 읽고, 없으면 API를 호출합니다.
@@ -120,7 +124,7 @@ def by_date(game_date, sr_id=DEFAULT_SR_ID, include_score=False, force_fetch=Fal
         sr_id (str): 시리즈 ID (기본값: 정규+시범+포스트)
         include_score (bool): True이면 각 경기에 scoreboard 요약 추가
         force_fetch (bool): True이면 캐시 무시하고 API 재호출
-        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
+        base_dir (str): 데이터 루트 디렉토리 (None이면 config.ini 설정값 사용)
 
     Returns:
         list: 경기 정보 딕셔너리 목록
@@ -197,12 +201,12 @@ def _to_legacy(g):
     }
 
 
-def save_date(game_date, sr_id=DEFAULT_SR_ID, base_dir="."):
+def save_date(game_date, sr_id=DEFAULT_SR_ID, base_dir=None):
     """특정 날짜의 스케줄을 API에서 가져와 저장합니다.
 
     Args:
         game_date (str): "20260328" 형식의 날짜
-        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
+        base_dir (str): 데이터 루트 디렉토리 (None이면 config.ini 설정값 사용)
 
     Returns:
         list: 저장된 경기 목록
@@ -218,13 +222,13 @@ def save_date(game_date, sr_id=DEFAULT_SR_ID, base_dir="."):
     return stripped
 
 
-def save_month(year, month, sr_id=DEFAULT_SR_ID, base_dir="."):
+def save_month(year, month, sr_id=DEFAULT_SR_ID, base_dir=None):
     """한 달치 스케줄을 저장합니다. 이미 저장된 날짜는 건너뜁니다.
 
     Args:
         year (int): 연도
         month (int): 월
-        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
+        base_dir (str): 데이터 루트 디렉토리 (None이면 config.ini 설정값 사용)
 
     Returns:
         int: 새로 저장한 날짜 수
@@ -249,7 +253,7 @@ def save_month(year, month, sr_id=DEFAULT_SR_ID, base_dir="."):
     return saved
 
 
-def save_month_csv(year, month, base_dir="."):
+def save_month_csv(year, month, base_dir=None):
     """스케줄을 API에서 수집하여 월별 CSV로 저장합니다.
 
     경기 없는 날짜는 G_DT만 채운 빈 줄로 표시합니다.
@@ -257,7 +261,7 @@ def save_month_csv(year, month, base_dir="."):
     Args:
         year (int): 연도
         month (int): 월
-        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
+        base_dir (str): 데이터 루트 디렉토리 (None이면 config.ini 설정값 사용)
 
     Returns:
         str: 저장된 CSV 파일 경로

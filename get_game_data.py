@@ -25,6 +25,7 @@ from datetime import date
 import requests
 
 import get_game_schedule
+import settings
 
 BOXSCORE_URL = "https://www.koreabaseball.com/ws/Schedule.asmx/GetBoxScoreScroll"
 SCOREBOARD_URL = "https://www.koreabaseball.com/ws/Schedule.asmx/GetScoreBoardScroll"
@@ -262,17 +263,21 @@ def fetch_game(game_date, game_id, le_id=1, sr_id=0, season_id=None):
     }
 
 
-def fetch_date(game_date, delay=1.0, base_dir="."):
+def fetch_date(game_date, delay=None, base_dir=None):
     """특정 날짜의 모든 경기 데이터를 수집합니다.
 
     Args:
         game_date (str): "20260328" 형식
-        delay (float): 각 요청 사이 대기 시간 (초)
-        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
+        delay (float): 각 요청 사이 대기 시간 (초, None이면 config.ini 설정값 사용)
+        base_dir (str): 데이터 루트 디렉토리 (None이면 config.ini 설정값 사용)
 
     Returns:
         list: 경기 데이터 목록
     """
+    if delay is None:
+        delay = settings.DELAY
+    if base_dir is None:
+        base_dir = settings.BASE_DIR
     games = get_game_schedule.by_date(game_date, base_dir=base_dir)
     results = []
 
@@ -306,18 +311,20 @@ def fetch_date(game_date, delay=1.0, base_dir="."):
 GAME_DIR = "data/game"  # base_dir 기준 상대 경로
 
 
-def _game_file_path(year, month, base_dir="."):
+def _game_file_path(year, month, base_dir=None):
     """경기 데이터 파일 경로를 반환합니다."""
+    if base_dir is None:
+        base_dir = settings.BASE_DIR
     return os.path.join(base_dir, GAME_DIR, str(year), f"{year}_{month:02d}.json")
 
 
-def load_month(year, month, base_dir="."):
+def load_month(year, month, base_dir=None):
     """한 달치 경기 데이터를 파일에서 로드합니다.
 
     Args:
         year (int): 연도 (예: 2026)
         month (int): 월 (1~12)
-        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
+        base_dir (str): 데이터 루트 디렉토리 (None이면 config.ini 설정값 사용)
 
     Returns:
         list: 경기 데이터 목록. 파일이 없으면 빈 리스트.
@@ -329,7 +336,7 @@ def load_month(year, month, base_dir="."):
         return json.load(f)
 
 
-def fetch_month(year, month, delay=0.5, save=False, base_dir="."):
+def fetch_month(year, month, delay=None, save=False, base_dir=None):
     """한 달치 모든 경기 데이터를 수집합니다.
 
     이미 수집된 경기는 건너뛰고 새 경기만 수집합니다.
@@ -338,13 +345,18 @@ def fetch_month(year, month, delay=0.5, save=False, base_dir="."):
     Args:
         year (int): 연도 (예: 2026)
         month (int): 월 (1~12)
-        delay (float): 각 요청 사이 대기 시간 (초)
+        delay (float): 각 요청 사이 대기 시간 (초, None이면 config.ini 설정값 사용)
         save (bool): True이면 JSON 파일로 저장
-        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
+        base_dir (str): 데이터 루트 디렉토리 (None이면 config.ini 설정값 사용)
 
     Returns:
         list: 전체 경기 데이터 목록 (기존 + 신규)
     """
+    if delay is None:
+        delay = settings.DELAY
+    if base_dir is None:
+        base_dir = settings.BASE_DIR
+
     # 기존 데이터 로드
     file_path = _game_file_path(year, month, base_dir)
     dir_path = os.path.dirname(file_path)

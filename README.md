@@ -23,7 +23,24 @@ pip install -r requirements.txt
 | `get_game_data.py` | 상세 경기 데이터(타자/투수/스코어보드) 수집 |
 | `convert_game_data.py` | 신규 수집 포맷을 기존(2001~2021) 포맷으로 변환 |
 | `get.py` | `kbo_data.ini`에 등록된 연도의 전체 데이터를 일괄 로드 |
+| `settings.py` | `config.ini` 로더 |
+| `config.ini` | 기본 저장 경로, 요청 간 대기 시간 설정 |
 | `kbo_data.ini` | 연도별 경기 월 목록, 미수집 경기 목록 등 메타 설정 |
+
+## 설정 (`config.ini`)
+
+기본 동작을 바꾸려면 `config.ini`를 편집하세요. 파일이 없거나 항목이 비어 있으면
+fallback 값(`base_dir=.`, `delay=0.5`)이 사용됩니다.
+
+```ini
+[paths]
+base_dir = .        ; 데이터 루트. {base_dir}/data/game/, {base_dir}/data/schedule/
+
+[network]
+delay = 0.5         ; 각 요청 사이 대기 시간 (초)
+```
+
+CLI `-d/--base-dir` 옵션이나 함수 인자(`base_dir=`, `delay=`)는 설정 파일 값을 덮어씁니다.
 
 ## 사용법
 
@@ -131,8 +148,9 @@ python get_kbo.py 2026 4 -d /path/to/backup
 
 ### 저장 위치 변경 (base_dir)
 
-기본값은 프로젝트 루트(`.`)이며, 아래 구조로 저장됩니다:
+기본값은 `config.ini`의 `paths.base_dir`이며, 아래 구조로 저장됩니다:
 `{base_dir}/data/game/{year}/`, `{base_dir}/data/schedule/{year}/`.
+함수 인자로 직접 지정하면 설정 파일 값보다 우선합니다.
 
 ```python
 # 다른 폴더로 수집
