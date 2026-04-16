@@ -1,7 +1,7 @@
 """KBO 경기 일정을 가져오는 모듈
 
-KBO 공식 JSON API를 사용하여 경기 일정을 수집합니다.
-순수 JSON API 호출만 사용하며, Selenium이나 HTML 파싱이 불필요합니다.
+KBO 공식 홈페이지에서 경기 일정을 수집합니다.
+Selenium이나 HTML 파싱이 불필요합니다.
 
 스케줄 CSV 컬럼:
     G_ID         경기 고유 ID (예: 20260328KTLG0)
@@ -57,7 +57,12 @@ HEADERS = {
 # 정규시즌(0) + 시범(1) + 포스트시즌(3~9)
 DEFAULT_SR_ID = "0,1,3,4,5,6,7,8,9"
 
-SCHEDULE_DIR = "data/schedule"
+SCHEDULE_DIR = "data/schedule"  # base_dir 기준 상대 경로
+
+
+def _schedule_dir(base_dir="."):
+    """스케줄 저장 디렉토리 경로를 반환합니다."""
+    return os.path.join(base_dir, SCHEDULE_DIR)
 
 SCHEDULE_FIELDS = [
     "G_ID", "SR_ID", "SEASON_ID", "G_DT", "G_TM", "S_NM",
@@ -76,10 +81,10 @@ SR_ID_NAMES = {
 }
 
 
-def _schedule_path(game_date):
+def _schedule_path(game_date, base_dir="."):
     """스케줄 저장 경로를 반환합니다."""
     year = game_date[:4]
-    return os.path.join(SCHEDULE_DIR, year, f"{game_date}.json")
+    return os.path.join(_schedule_dir(base_dir), year, f"{game_date}.json")
 
 
 def _strip_schedule(games):
@@ -105,7 +110,7 @@ def _fetch_from_api(game_date, sr_id=DEFAULT_SR_ID):
     return result.get("game", [])
 
 
-def by_date(game_date, sr_id=DEFAULT_SR_ID, include_score=False, force_fetch=False):
+def by_date(game_date, sr_id=DEFAULT_SR_ID, include_score=False, force_fetch=False, base_dir="."):
     """특정 날짜의 경기 목록을 가져옵니다.
 
     저장된 스케줄 파일이 있으면 파일에서 읽고, 없으면 API를 호출합니다.
@@ -115,11 +120,12 @@ def by_date(game_date, sr_id=DEFAULT_SR_ID, include_score=False, force_fetch=Fal
         sr_id (str): 시리즈 ID (기본값: 정규+시범+포스트)
         include_score (bool): True이면 각 경기에 scoreboard 요약 추가
         force_fetch (bool): True이면 캐시 무시하고 API 재호출
+        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
 
     Returns:
         list: 경기 정보 딕셔너리 목록
     """
-    path = _schedule_path(game_date)
+    path = _schedule_path(game_date, base_dir)
 
     if not force_fetch and os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
@@ -191,11 +197,12 @@ def _to_legacy(g):
     }
 
 
-def save_date(game_date, sr_id=DEFAULT_SR_ID):
+def save_date(game_date, sr_id=DEFAULT_SR_ID, base_dir="."):
     """특정 날짜의 스케줄을 API에서 가져와 저장합니다.
 
     Args:
         game_date (str): "20260328" 형식의 날짜
+        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
 
     Returns:
         list: 저장된 경기 목록
@@ -203,7 +210,7 @@ def save_date(game_date, sr_id=DEFAULT_SR_ID):
     games = _fetch_from_api(game_date, sr_id=sr_id)
     stripped = _strip_schedule(games)
 
-    path = _schedule_path(game_date)
+    path = _schedule_path(game_date, base_dir)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(stripped, f, ensure_ascii=False, indent=2)
@@ -211,8 +218,13 @@ def save_date(game_date, sr_id=DEFAULT_SR_ID):
     return stripped
 
 
-def save_month(year, month, sr_id=DEFAULT_SR_ID):
+def save_month(year, month, sr_id=DEFAULT_SR_ID, base_dir="."):
     """한 달치 스케줄을 저장합니다. 이미 저장된 날짜는 건너뜁니다.
+
+    Args:
+        year (int): 연도
+        month (int): 월
+        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
 
     Returns:
         int: 새로 저장한 날짜 수
@@ -224,10 +236,10 @@ def save_month(year, month, sr_id=DEFAULT_SR_ID):
 
     for day in range(1, last_day + 1):
         game_date = f"{year}{month:02d}{day:02d}"
-        path = _schedule_path(game_date)
+        path = _schedule_path(game_date, base_dir)
         if os.path.exists(path):
             continue
-        games = save_date(game_date, sr_id=sr_id)
+        games = save_date(game_date, sr_id=sr_id, base_dir=base_dir)
         count = len(games)
         if count > 0:
             print(f"  {game_date}: {count}경기 저장")
@@ -237,7 +249,7 @@ def save_month(year, month, sr_id=DEFAULT_SR_ID):
     return saved
 
 
-def save_month_csv(year, month):
+def save_month_csv(year, month, base_dir="."):
     """스케줄을 API에서 수집하여 월별 CSV로 저장합니다.
 
     경기 없는 날짜는 G_DT만 채운 빈 줄로 표시합니다.
@@ -245,6 +257,7 @@ def save_month_csv(year, month):
     Args:
         year (int): 연도
         month (int): 월
+        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
 
     Returns:
         str: 저장된 CSV 파일 경로
@@ -264,7 +277,7 @@ def save_month_csv(year, month):
         else:
             all_rows.append({"G_DT": game_date})
 
-    dir_path = os.path.join(SCHEDULE_DIR, str(year))
+    dir_path = os.path.join(_schedule_dir(base_dir), str(year))
     os.makedirs(dir_path, exist_ok=True)
     csv_path = os.path.join(dir_path, f"{year}_{month:02d}.csv")
     fieldnames = SCHEDULE_FIELDS + ["SR_NM"]

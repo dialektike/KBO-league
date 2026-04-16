@@ -1,6 +1,6 @@
 """KBO 게임센터에서 상세 경기 데이터를 수집하는 모듈
 
-KBO 공식 JSON API를 사용하여 타자/투수/기타 기록을 수집합니다.
+KBO 공식 홈페이지에서 타자/투수/기타 기록을 수집합니다.
 Selenium 불필요, HTML 파싱 불필요.
 
 API 엔드포인트:
@@ -262,17 +262,18 @@ def fetch_game(game_date, game_id, le_id=1, sr_id=0, season_id=None):
     }
 
 
-def fetch_date(game_date, delay=1.0):
+def fetch_date(game_date, delay=1.0, base_dir="."):
     """특정 날짜의 모든 경기 데이터를 수집합니다.
 
     Args:
         game_date (str): "20260328" 형식
         delay (float): 각 요청 사이 대기 시간 (초)
+        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
 
     Returns:
         list: 경기 데이터 목록
     """
-    games = get_game_schedule.by_date(game_date)
+    games = get_game_schedule.by_date(game_date, base_dir=base_dir)
     results = []
 
     for g in games:
@@ -302,7 +303,33 @@ def fetch_date(game_date, delay=1.0):
     return results
 
 
-def fetch_month(year, month, delay=0.5, save=False):
+GAME_DIR = "data/game"  # base_dir 기준 상대 경로
+
+
+def _game_file_path(year, month, base_dir="."):
+    """경기 데이터 파일 경로를 반환합니다."""
+    return os.path.join(base_dir, GAME_DIR, str(year), f"{year}_{month:02d}.json")
+
+
+def load_month(year, month, base_dir="."):
+    """한 달치 경기 데이터를 파일에서 로드합니다.
+
+    Args:
+        year (int): 연도 (예: 2026)
+        month (int): 월 (1~12)
+        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
+
+    Returns:
+        list: 경기 데이터 목록. 파일이 없으면 빈 리스트.
+    """
+    file_path = _game_file_path(year, month, base_dir)
+    if not os.path.exists(file_path):
+        return []
+    with open(file_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def fetch_month(year, month, delay=0.5, save=False, base_dir="."):
     """한 달치 모든 경기 데이터를 수집합니다.
 
     이미 수집된 경기는 건너뛰고 새 경기만 수집합니다.
@@ -312,14 +339,15 @@ def fetch_month(year, month, delay=0.5, save=False):
         year (int): 연도 (예: 2026)
         month (int): 월 (1~12)
         delay (float): 각 요청 사이 대기 시간 (초)
-        save (bool): True이면 data/game/{year}/{year}_{month}.json에 저장
+        save (bool): True이면 JSON 파일로 저장
+        base_dir (str): 데이터 루트 디렉토리 (기본값: ".")
 
     Returns:
         list: 전체 경기 데이터 목록 (기존 + 신규)
     """
     # 기존 데이터 로드
-    dir_path = f"data/game/{year}"
-    file_path = f"{dir_path}/{year}_{month:02d}.json"
+    file_path = _game_file_path(year, month, base_dir)
+    dir_path = os.path.dirname(file_path)
     existing = []
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
@@ -340,7 +368,7 @@ def fetch_month(year, month, delay=0.5, save=False):
         game_date = f"{year}{month:02d}{day:02d}"
         if game_date > today:
             break
-        games = get_game_schedule.by_date(game_date)
+        games = get_game_schedule.by_date(game_date, base_dir=base_dir)
 
         has_new = False
         for g in games:
