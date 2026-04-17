@@ -23,8 +23,9 @@ pip install -r requirements.txt
 | `get_game_data.py` | 상세 경기 데이터(타자/투수/스코어보드) 수집 |
 | `convert_game_data.py` | 신규 수집 포맷을 기존(2001~2021) 포맷으로 변환 |
 | `get.py` | `kbo_data.ini`에 등록된 연도의 전체 데이터를 일괄 로드 |
+| `backup.py` | 수집 데이터를 별도 저장소로 rsync 미러 백업 |
 | `settings.py` | `config.ini` 로더 |
-| `config.ini` | 기본 저장 경로, 요청 간 대기 시간 설정 |
+| `config.ini` | 기본 저장 경로, 요청 간 대기 시간, 백업 대상 설정 |
 | `kbo_data.ini` | 연도별 경기 월 목록, 미수집 경기 목록 등 메타 설정 |
 
 ## 설정 (`config.ini`)
@@ -38,6 +39,9 @@ base_dir = .        ; 데이터 루트. {base_dir}/data/game/, {base_dir}/data/s
 
 [network]
 delay = 0.5         ; 각 요청 사이 대기 시간 (초)
+
+[backup]
+target_dir = /path/to/backup-repo   ; backup.py로 rsync할 대상 (비우면 비활성)
 ```
 
 CLI `-d/--base-dir` 옵션이나 함수 인자(`base_dir=`, `delay=`)는 설정 파일 값을 덮어씁니다.
@@ -175,6 +179,28 @@ game_data = get.game_data()
 with open("game_data.json", "w") as f:
     json.dump(game_data, f, ensure_ascii=False)
 ```
+
+### 데이터 백업 (`backup.py`)
+
+`config.ini`의 `[backup] target_dir`로 `data/game/`, `data/schedule/`을 rsync 미러링합니다.
+`temp/`는 포함되지 않으며, 커밋/푸시는 수동으로 수행합니다.
+
+```bash
+# 1) 백업 동기화 (KBO-league 작업 디렉토리에서)
+python backup.py
+
+# 2) 변경 내역 확인만 (dry-run)
+python backup.py --dry-run
+
+# 3) 백업 저장소로 이동해 수동 커밋 & push
+cd /path/to/KBO_DATA
+git add -A
+git commit -m "백업 $(date +%Y-%m-%d)"
+git push
+```
+
+`--delete` 옵션으로 미러링되므로 소스에서 삭제된 파일은 대상에서도 삭제됩니다.
+백업 대상은 별도의 git 저장소여야 하며(비공개 권장), 없으면 오류로 중단됩니다.
 
 ## 데이터 구조
 
