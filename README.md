@@ -41,7 +41,16 @@ base_dir = .        ; 데이터 루트. {base_dir}/data/game/, {base_dir}/data/s
 delay = 0.5         ; 각 요청 사이 대기 시간 (초)
 
 [backup]
-target_dir = /path/to/backup-repo   ; backup.py로 rsync할 대상 (비우면 비활성)
+target_dir =        ; backup.py로 rsync할 대상 (비우면 비활성)
+```
+
+개인 경로 등 공개 저장소에 포함하지 않을 설정은 `config.local.ini`에 작성합니다.
+이 파일은 `.gitignore`에 의해 추적되지 않으며, `config.ini`의 값을 덮어씁니다.
+
+```ini
+; config.local.ini (예시)
+[backup]
+target_dir = /Users/me/git/KBO_DATA
 ```
 
 CLI `-d/--base-dir` 옵션이나 함수 인자(`base_dir=`, `delay=`)는 설정 파일 값을 덮어씁니다.

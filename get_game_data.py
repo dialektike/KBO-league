@@ -4,8 +4,9 @@ KBO 공식 홈페이지에서 타자/투수/기타 기록을 수집합니다.
 Selenium 불필요, HTML 파싱 불필요.
 
 API 엔드포인트:
-    - GetKboGameList: 경기 목록
     - GetBoxScoreScroll: 상세 박스스코어 (타자, 투수, 기타 기록)
+    - GetScoreBoardScroll: 이닝별 스코어보드
+    - GetKboGameList: 경기 목록 (get_game_schedule 경유)
 
 Example:
     단일 경기:
@@ -29,6 +30,7 @@ import settings
 
 BOXSCORE_URL = "https://www.koreabaseball.com/ws/Schedule.asmx/GetBoxScoreScroll"
 SCOREBOARD_URL = "https://www.koreabaseball.com/ws/Schedule.asmx/GetScoreBoardScroll"
+GAME_DIR = "data/game"  # base_dir 기준 상대 경로
 
 HEADERS = {
     "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -308,10 +310,7 @@ def fetch_date(game_date, delay=None, base_dir=None):
     return results
 
 
-GAME_DIR = "data/game"  # base_dir 기준 상대 경로
-
-
-def _game_file_path(year, month, base_dir=None):
+def game_file_path(year, month, base_dir=None):
     """경기 데이터 파일 경로를 반환합니다."""
     if base_dir is None:
         base_dir = settings.BASE_DIR
@@ -329,7 +328,7 @@ def load_month(year, month, base_dir=None):
     Returns:
         list: 경기 데이터 목록. 파일이 없으면 빈 리스트.
     """
-    file_path = _game_file_path(year, month, base_dir)
+    file_path = game_file_path(year, month, base_dir)
     if not os.path.exists(file_path):
         return []
     with open(file_path, "r", encoding="utf-8") as f:
@@ -358,7 +357,7 @@ def fetch_month(year, month, delay=None, save=False, base_dir=None):
         base_dir = settings.BASE_DIR
 
     # 기존 데이터 로드
-    file_path = _game_file_path(year, month, base_dir)
+    file_path = game_file_path(year, month, base_dir)
     dir_path = os.path.dirname(file_path)
     existing = []
     if os.path.exists(file_path):

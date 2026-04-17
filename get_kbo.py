@@ -46,7 +46,7 @@ def collect(year, month, delay=None, base_dir=None):
     print("[2/3] 경기 데이터 수집")
     get_game_data.fetch_month(year, month, delay=delay, save=True, base_dir=base_dir)
 
-    game_file = get_game_data._game_file_path(year, month, base_dir)
+    game_file = get_game_data.game_file_path(year, month, base_dir)
     print("[3/3] 기존 포맷으로 변환")
     convert_game_data.convert_file(game_file)
 

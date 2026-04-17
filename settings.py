@@ -16,10 +16,12 @@ Example:
 import configparser
 import os
 
-_CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.ini")
+_BASE = os.path.dirname(os.path.abspath(__file__))
+_CONFIG_PATH = os.path.join(_BASE, "config.ini")
+_LOCAL_CONFIG_PATH = os.path.join(_BASE, "config.local.ini")
 
 _parser = configparser.ConfigParser()
-_parser.read(_CONFIG_PATH, encoding="utf-8")
+_parser.read([_CONFIG_PATH, _LOCAL_CONFIG_PATH], encoding="utf-8")
 
 BASE_DIR = _parser.get("paths", "base_dir", fallback=".")
 DELAY = _parser.getfloat("network", "delay", fallback=0.5)

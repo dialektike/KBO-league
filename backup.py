@@ -16,6 +16,7 @@ Usage:
 
 import argparse
 import os
+import shlex
 import subprocess
 import sys
 
@@ -36,7 +37,7 @@ def run_rsync(src, dst, dry_run=False):
         cmd.append("-n")
     cmd += [src, dst]
 
-    print(f"$ {' '.join(cmd)}")
+    print(f"$ {shlex.join(cmd)}")
     result = subprocess.run(cmd)
     return result.returncode
 

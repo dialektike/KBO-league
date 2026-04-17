@@ -40,6 +40,8 @@ Example:
         >>> week = get_game_schedule.by_week("20260328")
 """
 
+import calendar
+import csv
 import json
 import os
 from datetime import date, timedelta
@@ -152,10 +154,10 @@ def _extract_scoreboard(game):
     }
 
 
-def today(sr_id=DEFAULT_SR_ID, include_score=False):
+def today(sr_id=DEFAULT_SR_ID, include_score=False, base_dir=None):
     """오늘 경기 목록을 가져옵니다."""
     today_str = date.today().strftime("%Y%m%d")
-    return by_date(today_str, sr_id=sr_id, include_score=include_score)
+    return by_date(today_str, sr_id=sr_id, include_score=include_score, base_dir=base_dir)
 
 
 def today_legacy():
@@ -233,8 +235,6 @@ def save_month(year, month, sr_id=DEFAULT_SR_ID, base_dir=None):
     Returns:
         int: 새로 저장한 날짜 수
     """
-    import calendar
-
     _, last_day = calendar.monthrange(year, month)
     saved = 0
 
@@ -266,9 +266,6 @@ def save_month_csv(year, month, base_dir=None):
     Returns:
         str: 저장된 CSV 파일 경로
     """
-    import calendar
-    import csv
-
     _, last_day = calendar.monthrange(year, month)
     all_rows = []
 
@@ -297,11 +294,12 @@ def save_month_csv(year, month, base_dir=None):
     return csv_path
 
 
-def by_week(start_date):
+def by_week(start_date, base_dir=None):
     """특정 날짜부터 7일간의 경기 목록을 반환합니다.
 
     Args:
         start_date (str): "20260328" 형식의 시작 날짜
+        base_dir (str): 데이터 루트 디렉토리 (None이면 config.ini 설정값 사용)
 
     Returns:
         dict: {날짜: 경기 목록} 딕셔너리
@@ -312,7 +310,7 @@ def by_week(start_date):
     for i in range(7):
         d = start + timedelta(days=i)
         game_date = d.strftime("%Y%m%d")
-        games = by_date(game_date)
+        games = by_date(game_date, base_dir=base_dir)
         result[game_date] = games
 
     return result
