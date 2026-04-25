@@ -145,3 +145,6 @@ config.local.ini
 # KBO 경기 데이터 (저작권 관련 — 폴더 구조만 유지하고 내용은 제외)
 data/game/*
 !data/game/.gitkeep
+
+# 수집 로그
+logs/
