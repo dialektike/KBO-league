@@ -148,3 +148,8 @@ data/game/*
 
 # 수집 로그
 logs/
+
+# DuckDB 산출물 (build_duckdb.py로 재생성 가능)
+*.duckdb
+*.duckdb.wal
+*.duckdb.tmp/
